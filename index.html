@@ -802,7 +802,7 @@ function attachEvents(){
   const qa = (a) => document.querySelector(`[data-action="${a}"]`);
   const qas = (a) => document.querySelectorAll(`[data-action="${a}"]`);
   
-  if(qa('nueva')) qa('nueva').addEventListener('click',()=>{ form=mkForm(curRole.id); step=0; view='form'; render(); });
+  qas('nueva').forEach(el=>el.addEventListener('click',()=>{ form=mkForm(curRole.id); step=0; view='form'; render(); }));
   
   qas('edit').forEach(el=>el.addEventListener('click',()=>{
     const f = forms.find(x=>x.id===el.dataset.id);
