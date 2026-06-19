@@ -249,6 +249,63 @@ const ROLE_DATA = {
 
 function getRD(rid){ return ROLE_DATA[rid] || ROLE_DATA['asesor-autoahorro']; }
 
+function formToDb(f){
+  const rd=getRD(f.role_id);
+  const db={id:f.id,role_id:f.role_id,created_at:f.created_at,updated_at:f.updated_at,
+    apellido_nombre:f.apellido_nombre,fecha:f.fecha,sucursal:f.sucursal,
+    lider_evaluador:f.lider_evaluador,status:f.status};
+  for(let i=0;i<5;i++){
+    const ind=f.indicadores[i],rdi=rd.inds[i];
+    db[`indicador_${i+1}`]=(ind&&rdi)?`${rdi.nombre} | Mín: ${ind.minimo||'—'} | Obj: ${ind.objetivo||'—'}`:null;
+  }
+  for(let i=0;i<5;i++){
+    const c=f.competencias[i],rdc=rd.comps[i];
+    db[`competencia_${i+1}`]=(c&&rdc)?`${rdc.nombre} | Cal: ${c.cal||'—'}${c.obs?' | Obs: '+c.obs:''}`:null;
+  }
+  for(let i=0;i<3;i++){
+    const fo=f.fortalezas[i];
+    db[`fortaleza_${i+1}`]=(fo&&(fo.f||fo.e))?`${fo.f||'—'} | Ejemplo: ${fo.e||'—'}`:null;
+  }
+  for(let i=0;i<3;i++){
+    const a=f.areas[i];
+    db[`area_mejora_${i+1}`]=(a&&(a.b||a.s||a.i))?`${a.b||'—'} | Situación: ${a.s||'—'} | Impacto: ${a.i||'—'}`:null;
+  }
+  for(let i=0;i<3;i++){
+    const c=f.compromisos[i];
+    db[`compromiso_${i+1}`]=(c&&(c.c||c.q||c.p||c.m))?`${c.c||'—'} | Quién: ${c.q||'—'} | Plazo: ${c.p||'—'} | Medición: ${c.m||'—'}`:null;
+  }
+  return db;
+}
+
+function dbToForm(db){
+  const rd=getRD(db.role_id);
+  const indicadores=rd.inds.map((_,i)=>{
+    const v=db[`indicador_${i+1}`]||'';
+    const m=v.match(/ \| Mín: (.+?) \| Obj: (.+)$/);
+    return {minimo:m?m[1].replace('—',''):'',objetivo:m?m[2].replace('—',''):''};
+  });
+  const competencias=rd.comps.map((_,i)=>{
+    const v=db[`competencia_${i+1}`]||'';
+    const cm=v.match(/ \| Cal: ([A-D])/),om=v.match(/ \| Obs: (.+)$/);
+    return {cal:cm?cm[1]:'',obs:om?om[1]:''};
+  });
+  const fortalezas=[0,1,2].map(i=>{
+    const v=db[`fortaleza_${i+1}`]||'',p=v.split(' | Ejemplo: ');
+    return {f:p[0]==='—'?'':p[0]||'',e:p[1]==='—'?'':p[1]||''};
+  });
+  const areas=[0,1,2].map(i=>{
+    const v=db[`area_mejora_${i+1}`]||'',b=v.split(' | Situación: '),s=b[1]?b[1].split(' | Impacto: '):['',''];
+    return {b:b[0]==='—'?'':b[0]||'',s:s[0]==='—'?'':s[0]||'',i:s[1]==='—'?'':s[1]||''};
+  });
+  const compromisos=[0,1,2].map(i=>{
+    const v=db[`compromiso_${i+1}`]||'';
+    const c=v.split(' | Quién: ')[0],qm=v.match(/ \| Quién: (.+?) \| Plazo:/);
+    const pm=v.match(/ \| Plazo: (.+?) \| Medición:/),mm=v.match(/ \| Medición: (.+)$/);
+    return {c:c==='—'?'':c||'',q:qm?qm[1].replace('—',''):'',p:pm?pm[1].replace('—',''):'',m:mm?mm[1].replace('—',''):''};
+  });
+  return {...db,indicadores,competencias,fortalezas,areas,compromisos};
+}
+
 const STEPS = ['Datos','Indicadores','Competencias','Síntesis','Compromisos'];
 
 // ─── ESTADO ───────────────────────────────────────────────────────────────
@@ -317,19 +374,19 @@ function validate(s, f){
 async function loadForms(role){
   loading = true; forms = []; render();
   const {data} = await sb.from('planillas').select('*').eq('role_id', role.id).order('created_at',{ascending:false});
-  forms = data || [];
+  forms = (data || []).map(dbToForm);
   loading = false; render();
 }
 
 async function saveForm(f, newStatus){
   saving = true; render();
-  const toSave = {...f, status: newStatus||f.status, updated_at: new Date().toISOString()};
-  const {error} = await sb.from('planillas').upsert(toSave);
+  const fToSave = {...f, status: newStatus||f.status, updated_at: new Date().toISOString()};
+  const {error} = await sb.from('planillas').upsert(formToDb(fToSave));
   if(error){ toast('Error al guardar', true); }
-  else { form = toSave; toast(newStatus==='Completada'?'Planilla completada ✓':'Guardado ✓'); }
+  else { form = fToSave; toast(newStatus==='Completada'?'Planilla completada ✓':'Guardado ✓'); }
   if(curRole) await loadForms(curRole);
   saving = false; render();
-  return toSave;
+  return fToSave;
 }
 
 async function delForm(id){
