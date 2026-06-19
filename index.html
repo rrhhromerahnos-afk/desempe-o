@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluación de Desempeño — Romera Hnos.</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f4f6fc;min-height:100vh;color:#222}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit}
+
+/* Topbar */
+.topbar{background:#112247;padding:0 28px;display:flex;align-items:stretch;justify-content:space-between;min-height:56px}
+.topbar-left{display:flex;align-items:center;gap:0}
+.crumb-btn{background:none;border:none;color:rgba(255,255,255,0.65);font-size:13px;font-weight:600;cursor:pointer;padding:0}
+.crumb-btn:hover{color:white}
+.crumb-sep{color:rgba(255,255,255,0.3);margin:0 10px;font-size:14px}
+.crumb-cur{color:white;font-size:13px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:8px}
+
+/* Botones */
+.btn{padding:9px 20px;border-radius:7px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-primary{background:#112247;color:white}
+.btn-primary:hover:not(:disabled){background:#1a3370}
+.btn-outline{background:transparent;color:#112247;border:1.5px solid #112247}
+.btn-outline:hover{background:#e8edf8}
+.btn-ghost{background:transparent;color:#666;border:1px solid #dde2ec}
+.btn-ghost:hover{background:#f4f6fc}
+.btn-danger{background:#c53030;color:white}
+.btn-danger:hover{background:#9b2c2c}
+.btn-white-outline{background:transparent;color:white;border:1.5px solid rgba(255,255,255,0.4);font-size:12px;padding:7px 14px}
+.btn-white-outline:hover{background:rgba(255,255,255,0.1)}
+
+/* Cards y layout */
+.page{max-width:720px;margin:36px auto;padding:0 28px 48px}
+.page-wide{max-width:860px;margin:28px auto;padding:0 20px 48px}
+.card{background:white;border-radius:10px;border:1px solid #dde2ec;padding:20px 24px;margin-bottom:16px}
+.sec-title{font-size:15px;font-weight:700;color:#112247;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #e8edf8}
+
+/* Formulario */
+.fld{margin-bottom:14px}
+.fld label{font-size:11px;font-weight:700;color:#112247;margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.5px}
+.fld label .req{color:#c53030;margin-left:2px}
+.inp{width:100%;padding:8px 12px;border:1px solid #dde2ec;border-radius:6px;font-size:13px;outline:none;color:#222;background:white}
+.inp:focus{border-color:#112247}
+textarea.inp{resize:vertical;min-height:68px}
+
+/* Steps */
+.steps-bar{background:white;border-bottom:1px solid #dde2ec;padding:10px 24px;display:flex;gap:6px;overflow-x:auto}
+.step-btn{padding:7px 16px;border-radius:20px;border:none;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+.step-done{background:#e8edf8;color:#112247}
+.step-active{background:#112247;color:white}
+.step-pending{background:#f4f6fc;color:#999;cursor:default}
+
+/* Info box */
+.info-box{background:#e8edf8;border-radius:7px;padding:10px 14px;font-size:12px;color:#112247;margin-bottom:14px}
+.warn-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:7px;padding:10px 14px;font-size:12px;color:#78350f}
+
+/* Grid helpers */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* Indicador card */
+.ind-card{border:1px solid #dde2ec;border-radius:8px;padding:16px;margin-bottom:12px}
+.ind-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.ind-num{background:#112247;color:white;font-size:11px;font-weight:800;padding:2px 9px;border-radius:4px}
+.ind-nombre{font-weight:700;font-size:14px}
+.ind-peso{margin-left:auto;background:#e8edf8;color:#112247;font-size:11px;font-weight:700;padding:3px 9px;border-radius:4px}
+.ind-formula{font-size:12px;color:#555;margin-bottom:2px;font-style:italic}
+.ind-nota{font-size:11px;color:#999;margin-bottom:12px}
+
+/* Competencia card */
+.comp-card{border:1.5px solid #dde2ec;border-radius:8px;padding:16px;margin-bottom:12px}
+.comp-card.sin-cal{border-color:#f8d7da}
+.comp-nombre{font-weight:700;font-size:14px;color:#112247}
+.comp-nivel{font-size:11px;color:#888;margin-bottom:10px}
+.comp-items{margin:0 0 14px;padding-left:18px}
+.comp-items li{font-size:12px;color:#444;margin-bottom:4px}
+.cal-btns{display:flex;gap:6px}
+.cal-btn{width:38px;height:38px;border-radius:7px;font-weight:800;font-size:14px;border:2px solid #dde2ec;background:white;color:#555}
+.cal-btn.selected{background:#112247;color:white;border-color:#112247}
+.cal-req{font-size:10px;color:#c53030;margin-top:5px}
+
+/* Síntesis */
+.synth-row{border:1px solid #dde2ec;border-radius:8px;padding:14px;margin-bottom:10px}
+.synth-label{font-size:11px;font-weight:700;color:#aaa;margin-bottom:10px;text-transform:uppercase}
+
+/* Lista de planillas */
+.planilla-row{background:white;border-radius:10px;border:1px solid #dde2ec;padding:16px 22px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+.planilla-nombre{font-weight:700;font-size:15px;color:#111;margin-bottom:3px}
+.planilla-meta{font-size:12px;color:#777;display:flex;gap:14px;flex-wrap:wrap}
+.planilla-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.badge-borrador{background:#fef9c3;color:#854d0e}
+.badge-completada{background:#d1fae5;color:#065f46}
+
+/* Preview */
+.preview-header{background:#112247;border-radius:10px 10px 0 0;padding:24px 28px;color:white}
+.preview-sub{background:#e8edf8;border:1px solid #c8d6f0;border-top:none;padding:10px 28px;font-size:12px;color:#112247}
+.preview-section{background:white;border:1px solid #dde2ec;border-top:none;padding:20px 28px}
+.preview-section:last-child{border-radius:0 0 10px 10px}
+.preview-table{width:100%;border-collapse:collapse}
+.preview-table th{padding:8px 12px;text-align:left;font-size:12px;font-weight:700;background:#112247;color:white;white-space:nowrap}
+.preview-table th.center{text-align:center}
+.preview-table td{padding:10px 12px;font-size:13px;border-bottom:1px solid #dde2ec;vertical-align:top}
+.preview-table td.center{text-align:center}
+.preview-data-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 32px}
+.preview-data-key{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.preview-data-val{font-size:14px;border-bottom:1px solid #dde2ec;padding-bottom:6px;color:#111}
+.cal-badge{font-weight:900;font-size:17px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px}
+.cal-A{background:#d1fae5;color:#065f46}
+.cal-B{background:#e8edf8;color:#112247}
+.cal-C{background:#fef9c3;color:#854d0e}
+.cal-D{background:#fee2e2;color:#991b1b}
+.obs-box{background:#f9fafc;border-radius:6px;padding:8px 12px;font-size:12px;color:#555;margin-top:8px}
+.sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;text-align:center}
+.sig-line{border-bottom:1.5px solid #333;margin-bottom:8px;padding-bottom:42px}
+
+/* Home */
+.home-header{background:#112247;padding:28px 40px 36px}
+.area-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.area-card{background:white;border-radius:12px;border:1.5px solid #dde2ec;padding:26px 24px;cursor:pointer;position:relative;overflow:hidden;transition:box-shadow .2s}
+.area-card:hover{box-shadow:0 4px 18px rgba(17,34,71,.12)}
+.area-card.disabled{opacity:.55;cursor:default}
+.area-card .stripe{position:absolute;top:0;left:0;right:0;height:3px;background:#112247}
+.area-icon{font-size:32px;margin-bottom:12px;color:#112247;font-weight:900;line-height:1}
+.area-label{font-size:20px;font-weight:900;color:#112247;margin-bottom:6px}
+.area-sub{font-size:12px;color:#888}
+.area-link{margin-top:16px;font-size:12px;font-weight:700;color:#112247}
+
+/* Role list */
+.role-card{background:white;border-radius:10px;border:1.5px solid #dde2ec;padding:18px 22px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:box-shadow .15s}
+.role-card:hover{box-shadow:0 3px 14px rgba(17,34,71,.1)}
+.role-card.disabled{opacity:.5;cursor:default}
+.role-nombre{font-weight:800;font-size:15px;color:#112247}
+.role-sub{font-size:12px;color:#888;margin-top:2px}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);max-width:360px;display:none;color:white}
+
+/* Empty state */
+.empty-state{text-align:center;padding:55px 40px}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.empty-title{font-size:16px;font-weight:700;color:#112247;margin-bottom:8px}
+.empty-sub{color:#888;margin-bottom:22px;font-size:14px}
+
+/* Confirm delete inline */
+.confirm-del{display:flex;align-items:center;gap:6px}
+.confirm-del span{font-size:12px;color:#c53030;font-weight:700}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+<div id="app"></div>
+
+<script>
+// ─── SUPABASE ──────────────────────────────────────────────────────────────
+const SUPA_URL = 'https://dfjnwofamoypaqmnppcz.supabase.co';
+const SUPA_KEY = 'sb_publishable_mTuzSQKHvDkJh-HZF8S7Dw_f8Jwl1T0';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ─── DATOS ────────────────────────────────────────────────────────────────
+const AREAS = [
+  { id:'autoahorro', label:'Autoahorro', icon:'◎', roles:[
+    { id:'asesor-autoahorro', label:'Asesor Comercial', sub:'Autoahorro', active:true },
+    { id:'supervisor-autoahorro', label:'Supervisor', sub:'Autoahorro', active:false },
+  ]},
+  { id:'venta', label:'Venta', icon:'◈', roles:[
+    { id:'asesor-ventas', label:'Asesor de Ventas', sub:'VW', active:true },
+    { id:'jefe-ventas', label:'Jefe de Ventas', sub:'', active:false },
+    { id:'asesor-usados', label:'Asesor de Usados', sub:'', active:false },
+  ]},
+  { id:'postventa', label:'Postventa', icon:'◧', roles:[
+    { id:'asesor-postventa', label:'Asesor de Servicios', sub:'', active:true },
+    { id:'tecnico', label:'Técnico de Taller', sub:'', active:true },
+    { id:'jefe-postventa', label:'Jefe de Postventa', sub:'', active:false },
+  ]},
+  { id:'administracion', label:'Administración', icon:'◫', roles:[
+    { id:'administrativo', label:'Administrativo', sub:'', active:false },
+    { id:'recepcionista', label:'Recepcionista', sub:'', active:false },
+  ]},
+];
+
+const ROLE_DATA = {
+  'asesor-autoahorro': {
+    puesto:'Asesor Comercial Autoahorro', liderLabel:'Supervisor Autoahorro',
+    inds:[
+      {n:1,peso:'50%',nombre:'Cumplimiento del objetivo de ventas mensual',formula:'Cantidad de meses en los que el asesor alcanzó el objetivo / Total de meses evaluados × 100%',nota:'Mide consistencia, no volumen total.',dm:'',do:''},
+      {n:2,peso:'20%',nombre:'Efectividad de ventas — conversión de datos digitales',formula:'Suscripciones concretadas / Total de datos digitales asignados × 100%',nota:'Meta de referencia: ≥ 5% — Objetivo: maximizar',dm:'',do:''},
+      {n:3,peso:'20%',nombre:'Efectividad de ventas — conversión de datos de salón',formula:'Suscripciones concretadas / Total de prospectos de salón × 100%',nota:'Objetivo: maximizar',dm:'',do:''},
+      {n:4,peso:'10%',nombre:'Morosidad cuota 2 de cartera propia',formula:'Porcentaje de la cartera propia con morosidad en cuota 2',nota:'Meta: ≤ 14% — Objetivo: minimizar',dm:'',do:''},
+    ],
+    comps:[
+      {nombre:'Asesoramiento técnico-financiero',nivel:'Nivel requerido: 2 — Intermedio',items:['Conoce y explica correctamente la mecánica del Plan de Ahorro VW (licitaciones, adjudicaciones, cesiones, rescisiones).','Responde las consultas sin esquivar ni simplificar en exceso aspectos que el cliente necesita conocer para decidir bien.','Se mantiene actualizado sobre cambios en condiciones del plan sin que se lo recuerden.']},
+      {nombre:'Calidad de venta',nivel:'Nivel requerido: 2 — Intermedio',items:['Informa correctamente el rango de cuota, plazos de entrega, cuota variable y mecanismos para retirar la unidad.','Menos de 3 observaciones mensuales en scoring.']},
+      {nombre:'Gestión de base de datos (Priuser)',nivel:'Nivel requerido: 2 — Intermedio',items:['Toma un mínimo de 80 datos del sistema Priuser por mes de forma consistente.','Registra al menos 2 gestiones por cada dato tomado dentro del período de seguimiento.']},
+      {nombre:'Comunicación con el equipo y el líder',nivel:'Nivel requerido: 1 — Básico',items:['Comunica a su líder dificultades en su gestión antes de que los resultados las evidencien.','Comparte información útil con sus compañeros sin que se lo pidan.','Mantiene un trato respetuoso y constructivo en las reuniones de equipo.']},
+    ],
+  },
+  'asesor-ventas': {
+    puesto:'Asesor Comercial', liderLabel:'Jefe de Ventas',
+    inds:[
+      {n:1,peso:'40%',nombre:'Boletos Vendidos vs. Objetivo',formula:'Boletos vendidos / Objetivo de venta establecido × 100%',nota:'Objetivo: maximizar — mayor % = mejor desempeño',dm:'',do:''},
+      {n:2,peso:'35%',nombre:'Tasa de Conversión',formula:'Ventas realizadas / Leads recibidos × 100%',nota:'Objetivo: maximizar — mayor tasa = mejor desempeño',dm:'',do:''},
+      {n:3,peso:'15%',nombre:'Velocidad de Atención Inicial',formula:'Tiempo promedio de primera respuesta a leads (registrado por sistema)',nota:'Objetivo: minimizar — menor tiempo = mejor desempeño',dm:'',do:''},
+      {n:4,peso:'10%',nombre:'Calidad de Venta',formula:'Puntaje obtenido en encuestas de satisfacción del cliente',nota:'Mínimo necesario: 4,83 — Objetivo ideal: 5,00',dm:'4,83',do:'5,00'},
+    ],
+    comps:[
+      {nombre:'Orientación al cliente',nivel:'Nivel requerido: 2 — Intermedio',items:['Anticipa necesidades del prospecto no expresadas verbalmente y propone soluciones antes de que las pida.','Gestiona objeciones y reclamos de primera instancia con autonomía y criterio, protegiendo al cliente y a la empresa al mismo tiempo.']},
+      {nombre:'Uso de los sistemas (CRM)',nivel:'Nivel requerido: 2 — Intermedio',items:['Carga datos de prospectos y gestiones en el CRM de forma completa y oportuna sin recordatorios externos.','Utiliza el CRM para ordenar su actividad diaria: prioriza contactos según probabilidad real de cierre.','Deja registro de cada gestión con contexto suficiente para retomar sin pérdida de información.']},
+      {nombre:'Trabajo en equipo',nivel:'Nivel requerido: 1 — Básico',items:['Comparte información relevante sobre prospectos o situaciones de mercado con el equipo sin que se lo soliciten.','Participa activamente en las reuniones del equipo: escucha, aporta y no genera dinámicas de conflicto.','Mantiene el respeto con colegas incluso en momentos de presión o tensión por resultados comerciales.']},
+      {nombre:'Resiliencia y perseverancia comercial',nivel:'Nivel requerido: 2 — Intermedio',items:['Mantiene la disciplina de actividad comercial incluso en períodos de baja conversión o rechazos consecutivos.','No impacta su trato con el siguiente prospecto ni con colegas como respuesta a resultados negativos.','Analiza los cierres fallidos como insumo de mejora y ajusta su técnica en la siguiente gestión.']},
+    ],
+  },
+  'tecnico': {
+    puesto:'Técnico de Taller', liderLabel:'Jefe de Taller',
+    inds:[
+      {n:1,peso:'50%',nombre:'Cantidad de pasos cerrados en el mes',formula:'Órdenes de trabajo técnicas cerradas y facturadas en el mes',nota:'Objetivo: maximizar',dm:'',do:'60'},
+      {n:2,peso:'25%',nombre:'Calidad de Reparación (LBS)',formula:'Puntaje promedio de la encuesta de última visita atribuida al técnico',nota:'Objetivo: maximizar — referencia escala VW',dm:'4,81',do:'4,90'},
+      {n:3,peso:'15%',nombre:'% de ampliaciones sugeridas sobre pasos cerrados',formula:'Pasos con ampliación sugerida / Total de pasos cerrados × 100%',nota:'Objetivo: maximizar',dm:'Histórico del técnico',do:''},
+      {n:4,peso:'10%',nombre:'Auditoría OR — Planilla de Mantenimiento',formula:'% de órdenes auditadas con planilla completa y coherente con el trabajo realizado',nota:'Objetivo: 100% — sin excepciones',dm:'100%',do:'100%'},
+    ],
+    comps:[
+      {nombre:'Capacidad / Conocimiento Técnico',nivel:'Nivel requerido: 2 — Intermedio',items:['Diagnostica y resuelve fallas dentro de su nivel sin requerir asistencia constante del jefe de taller.','Completa los módulos de formación obligatorios de VW Academy dentro de los plazos.','Consulta al jefe de taller ante fallas que superan su alcance técnico antes de avanzar.']},
+      {nombre:'Cumplimiento de Normas & Procedimientos',nivel:'Nivel requerido: 2 — Intermedio',items:['Ejecuta las órdenes de trabajo siguiendo el procedimiento: planilla completa antes de cerrar la OT.','Respeta los procedimientos de seguridad del taller de forma sistemática, no solo cuando hay supervisión.','Reporta al jefe de taller desviaciones detectadas sin ocultarlos ni demorarlos.']},
+      {nombre:'Prolijidad en la ejecución del trabajo',nivel:'Nivel requerido: 1 — Básico',items:['Entrega el vehículo con el nivel de limpieza esperado sin que el jefe de taller deba intervenir.','Completa la documentación de la OT con datos correctos y legibles en todos los campos.','Realiza el trabajo con el cuidado necesario para no generar daños secundarios.']},
+      {nombre:'Orden y Limpieza del puesto de trabajo',nivel:'Nivel requerido: 1 — Básico',items:['Mantiene su box y puesto de trabajo ordenado y limpio durante el turno.','Las herramientas de uso frecuente están en su lugar cuando se necesitan.','Respeta los espacios comunes del taller con el mismo criterio que su espacio personal.']},
+    ],
+  },
+  'asesor-postventa': {
+    puesto:'Asesor de Servicios', liderLabel:'Gerente de Servicio / Jefe de Taller',
+    inds:[
+      {n:1,peso:'50%',nombre:'Calidad de Trato al Cliente (LBS)',formula:'Puntaje promedio de la encuesta de última visita en la dimensión de trato y atención del asesor',nota:'Objetivo: maximizar — referencia escala VW',dm:'4,81',do:'4,90'},
+      {n:2,peso:'35%',nombre:'Auditoría OR — Apertura de Orden de Reparación',formula:'% de órdenes auditadas con apertura correcta y completa',nota:'Objetivo: 100% — sin excepciones',dm:'100%',do:'100%'},
+      {n:3,peso:'15%',nombre:'Venta de Accesorios — Cumplimiento de Campaña Mensual',formula:'Unidades/monto vendido de accesorio de campaña mensual vs. objetivo asignado',nota:'Objetivo: maximizar — los productos y montos se definen mes a mes',dm:'',do:''},
+    ],
+    comps:[
+      {nombre:'Capacidad / Conocimiento Técnico del Proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Tiene conocimiento del proceso técnico suficiente para comunicar al cliente qué se realizará y cuándo estará listo.','Completa los módulos de formación obligatorios de VW Academy dentro de los plazos.','Registra correctamente en el sistema los datos técnicos de la OT al momento de la apertura.']},
+      {nombre:'Uso de Tecnología',nivel:'Nivel requerido: 2 — Intermedio',items:['Opera el sistema DMS (Tenia) para apertura, seguimiento y cierre de OTs de forma autónoma.','Usa las herramientas digitales del área sin resistencia ante actualizaciones o cambios.','Registra los datos de cada recepción en tiempo real durante la atención.']},
+      {nombre:'Planificación & Organización',nivel:'Nivel requerido: 2 — Intermedio',items:['Gestiona su agenda de turnos de modo que la capacidad del taller esté aprovechada sin generar cuellos de botella.','Anticipa al cliente cuando hay un desvío en el plazo de entrega, sin esperar a que el cliente llame.','Al cierre del turno, todas las OTs activas tienen el estado actualizado en el sistema.']},
+      {nombre:'Orientación al cliente & proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Recibe al cliente de forma cálida y registra sus datos de recepción completos antes de abrir la OT.','Gestiona las expectativas sobre plazos y presupuesto de forma proactiva y honesta.','Asegura que el cliente salga con claridad sobre lo que se realizó y los próximos pasos.']},
+    ],
+  },
+};
+
+function getRD(rid){ return ROLE_DATA[rid] || ROLE_DATA['asesor-autoahorro']; }
+
+const STEPS = ['Datos','Indicadores','Competencias','Síntesis','Compromisos'];
+
+// ─── ESTADO ───────────────────────────────────────────────────────────────
+let view = 'home';
+let curArea = null, curRole = null;
+let forms = [], form = null, step = 0;
+let saving = false, loading = false, confirmDelId = null;
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function mkForm(rid){
+  const rd = getRD(rid);
+  return {
+    id: Date.now().toString(), role_id: rid,
+    created_at: new Date().toISOString(),
+    apellido_nombre:'', fecha: new Date().toISOString().split('T')[0],
+    sucursal:'', lider_evaluador:'',
+    indicadores: rd.inds.map(ind=>({minimo:ind.dm||'',objetivo:ind.do||''})),
+    competencias: rd.comps.map(()=>({cal:'',obs:''})),
+    fortalezas: [{f:'',e:''},{f:'',e:''},{f:'',e:''}],
+    areas: [{b:'',s:'',i:''},{b:'',s:'',i:''},{b:'',s:'',i:''}],
+    compromisos: [{c:'',q:'',p:'',m:''},{c:'',q:'',p:'',m:''},{c:'',q:'',p:'',m:''}],
+    status:'Borrador'
+  };
+}
+
+function toast(msg, err=false){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = err ? '#c53030' : '#112247';
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function validate(s, f){
+  const rd = getRD(f.role_id);
+  if(s===0){
+    if(!f.apellido_nombre.trim()) return 'Completá el apellido y nombre';
+    if(!f.fecha) return 'Seleccioná la fecha';
+    if(!f.sucursal.trim()) return 'Completá la sucursal';
+    if(!f.lider_evaluador.trim()) return 'Completá el líder evaluador';
+  }
+  if(s===1){
+    for(let i=0;i<f.indicadores.length;i++){
+      if(!f.indicadores[i].minimo.trim()) return `Indicador ${i+1}: completá el mínimo necesario`;
+      if(!f.indicadores[i].objetivo.trim()) return `Indicador ${i+1}: completá el objetivo deseable`;
+    }
+  }
+  if(s===2){
+    for(let i=0;i<f.competencias.length;i++){
+      if(!f.competencias[i].cal) return `Calificá la competencia: "${rd.comps[i]?.nombre}"`;
+    }
+  }
+  if(s===3){
+    if(!f.fortalezas.some(x=>x.f.trim()&&x.e.trim())) return 'Ingresá al menos una fortaleza con ejemplo concreto';
+    if(!f.areas.some(x=>x.b.trim()&&x.s.trim()&&x.i.trim())) return 'Ingresá al menos un área de mejora completa';
+  }
+  if(s===4){
+    if(!f.compromisos.some(x=>x.c.trim()&&x.q.trim()&&x.p.trim()&&x.m.trim())) return 'Ingresá al menos un compromiso completo';
+  }
+  return null;
+}
+
+// ─── SUPABASE OPS ─────────────────────────────────────────────────────────
+async function loadForms(role){
+  loading = true; forms = []; render();
+  const {data} = await sb.from('planillas').select('*').eq('role_id', role.id).order('created_at',{ascending:false});
+  forms = data || [];
+  loading = false; render();
+}
+
+async function saveForm(f, newStatus){
+  saving = true; render();
+  const toSave = {...f, status: newStatus||f.status, updated_at: new Date().toISOString()};
+  const {error} = await sb.from('planillas').upsert(toSave);
+  if(error){ toast('Error al guardar', true); }
+  else { form = toSave; toast(newStatus==='Completada'?'Planilla completada ✓':'Guardado ✓'); }
+  if(curRole) await loadForms(curRole);
+  saving = false; render();
+  return toSave;
+}
+
+async function delForm(id){
+  await sb.from('planillas').delete().eq('id', id);
+  confirmDelId = null;
+  await loadForms(curRole);
+}
+
+// ─── PRINT ────────────────────────────────────────────────────────────────
+function doPrint(f){
+  const rd = getRD(f.role_id);
+  const cbg={A:'#d1fae5',B:'#e8edf8',C:'#fef9c3',D:'#fee2e2'};
+  const cfg={A:'#065f46',B:'#112247',C:'#854d0e',D:'#991b1b'};
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Planilla — ${f.apellido_nombre}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:24px}
+h2{font-size:13px;font-weight:700;color:#112247;border-bottom:2px solid #e8edf8;padding-bottom:6px;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}
+th{background:#112247;color:white;padding:7px 10px;text-align:left;font-size:11px;font-weight:700}
+td{padding:8px 10px;border-bottom:1px solid #dde2ec;vertical-align:top}
+.hdr{background:#112247;color:white;padding:20px 24px;border-radius:6px 6px 0 0}
+.note{background:#e8edf8;padding:9px 14px;font-size:11px;color:#112247;margin-bottom:16px}
+.cblock{border:1px solid #dde2ec;border-radius:6px;padding:12px 14px;margin-bottom:8px}
+.obs{background:#f9fafc;padding:6px 10px;font-size:11px;color:#555;margin-top:6px}
+.sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;margin-top:48px}
+.sig{border-top:1.5px solid #333;padding-top:8px;font-size:11px}
+.italic{font-style:italic;color:#666;font-size:11px;margin:14px 0 28px}
+@media print{@page{margin:1.2cm}body{padding:0}}</style></head><body>
+<div class="hdr"><small>RRHH | Revisión Inicial de Desempeño · Versión: 00 · Romera Hnos. S.A.</small>
+<h1 style="font-size:18px;font-weight:800;margin:6px 0 4px">Planilla de Revisión de Desempeño</h1>
+<small style="opacity:.8">${rd.puesto} · Revisión inicial · 2026</small></div>
+<div class="note">Esta instancia tiene dos propósitos: (1) comunicar los indicadores y competencias que guiarán la evaluación de fin de año, y (2) ofrecer una primera devolución sobre fortalezas y áreas de mejora. El documento queda como registro firmado del acuerdo.</div>
+<h2>1. Datos del encuentro</h2>
+<table><tr><th>Apellido y nombre</th><th>Fecha</th><th>Puesto</th><th>Sucursal</th></tr>
+<tr><td>${f.apellido_nombre||'—'}</td><td>${f.fecha||'—'}</td><td>${rd.puesto}</td><td>${f.sucursal||'—'}</td></tr>
+<tr><th>Líder evaluador</th><th>Puesto del líder</th><td colspan="2"></td></tr>
+<tr><td>${f.lider_evaluador||'—'}</td><td>${rd.liderLabel}</td><td colspan="2"></td></tr></table>
+<h2>2. Indicadores de desempeño</h2>
+<table><thead><tr><th>#</th><th>Indicador y fórmula</th><th>Peso</th><th>Mínimo necesario</th><th>Objetivo deseable</th></tr></thead><tbody>
+${rd.inds.map((ind,i)=>`<tr><td><b>${ind.n}</b></td><td><b>${ind.nombre}</b><br><small style="color:#888">${ind.formula}</small><br><small style="color:#aaa">${ind.nota}</small></td><td><b>${ind.peso}</b></td><td>${f.indicadores[i]?.minimo||'—'}</td><td>${f.indicadores[i]?.objetivo||'—'}</td></tr>`).join('')}
+</tbody></table>
+<h2>3. Evaluación de competencias</h2>
+<div style="background:#e8edf8;padding:6px 12px;font-size:11px;color:#112247;margin-bottom:10px"><b>Escala:</b> A — Supera · B — Cumple · C — En desarrollo · D — Brecha crítica</div>
+${rd.comps.map((comp,i)=>`<div class="cblock"><div style="display:flex;justify-content:space-between;align-items:center"><span><b>${comp.nombre}</b> <small style="color:#888">${comp.nivel}</small></span>${f.competencias[i]?.cal?`<span style="background:${cbg[f.competencias[i].cal]};color:${cfg[f.competencias[i].cal]};padding:3px 10px;border-radius:4px;font-weight:700">${f.competencias[i].cal}</span>`:''}</div>${f.competencias[i]?.obs?`<div class="obs"><b>Observaciones: </b>${f.competencias[i].obs}</div>`:''}</div>`).join('')}
+<h2>4. Síntesis del encuentro</h2>
+<b>Fortalezas</b><table style="margin-top:8px"><thead><tr><th>Fortaleza</th><th>Ejemplo concreto</th></tr></thead><tbody>
+${f.fortalezas.map(x=>`<tr><td>${x.f||'—'}</td><td>${x.e||'—'}</td></tr>`).join('')}</tbody></table>
+<b>Áreas de mejora</b><table style="margin-top:8px"><thead><tr><th>Brecha</th><th>Situación observada</th><th>Impacto</th></tr></thead><tbody>
+${f.areas.map(x=>`<tr><td>${x.b||'—'}</td><td>${x.s||'—'}</td><td>${x.i||'—'}</td></tr>`).join('')}</tbody></table>
+<h2>5. Compromisos</h2>
+<table><thead><tr><th>#</th><th>Compromiso</th><th>Quién</th><th>Plazo</th><th>Cómo se mide</th></tr></thead><tbody>
+${f.compromisos.map((c,i)=>`<tr><td><b>${i+1}</b></td><td>${c.c||'—'}</td><td>${c.q||'—'}</td><td>${c.p||'—'}</td><td>${c.m||'—'}</td></tr>`).join('')}</tbody></table>
+<p class="italic">Al firmar, el/la colaborador/a confirma haber recibido y comprendido los indicadores y competencias que guiarán su evaluación de fin de año.</p>
+<div class="sig-grid">
+  <div><div style="height:44px"></div><div class="sig"><b>Colaborador/a</b><br>Nombre y firma<br>Fecha: ___________</div></div>
+  <div><div style="height:44px"></div><div class="sig"><b>Líder evaluador</b><br>Nombre y firma<br>Fecha: ___________</div></div>
+  <div><div style="height:44px"></div><div class="sig"><b>Recursos Humanos</b><br>Nombre y firma<br>Fecha: ___________</div></div>
+</div></body></html>`;
+  const blob = new Blob([html],{type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`Planilla_${(f.apellido_nombre||'planilla').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}_${f.fecha||'2026'}.html`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────
+function render(){
+  document.getElementById('app').innerHTML = buildView();
+  attachEvents();
+}
+
+function buildView(){
+  if(view==='home') return buildHome();
+  if(view==='area') return buildArea();
+  if(view==='list') return buildList();
+  if(view==='form') return buildForm();
+  if(view==='preview') return buildPreview();
+  return '';
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────
+function buildHome(){
+  const cards = AREAS.map(a=>{
+    const active = a.roles.some(r=>r.active);
+    const activeCount = a.roles.filter(r=>r.active).length;
+    return `<div class="area-card${active?'':' disabled'}" ${active?`data-area="${a.id}"`:''}>
+      ${active?'<div class="stripe"></div>':''}
+      <div class="area-icon">${a.icon}</div>
+      <div class="area-label">${a.label}</div>
+      <div class="area-sub">${active?`${activeCount} puesto${activeCount>1?'s':''} disponible${activeCount>1?'s':''}` : 'Próximamente disponible'}</div>
+      ${active?'<div class="area-link">Ingresar →</div>':''}
+    </div>`;
+  }).join('');
+  return `
+    <div class="home-header">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Romera Hnos. S.A. · Volkswagen</div>
+      <div style="font-size:26px;font-weight:900;color:white;letter-spacing:-.5px">Sistema de Evaluación de Desempeño</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.55);margin-top:6px">Revisión Inicial 2026 · Seleccioná el área</div>
+    </div>
+    <div class="page">
+      <div class="area-grid">${cards}</div>
+    </div>`;
+}
+
+// ── AREA ──────────────────────────────────────────────────────────────────
+function buildArea(){
+  const roles = curArea.roles.map(r=>`
+    <div class="role-card${r.active?'':' disabled'}" ${r.active?`data-role="${r.id}"`:''}>
+      <div>
+        <div class="role-nombre" style="color:${r.active?'#112247':'#999'}">${r.label}</div>
+        ${r.sub?`<div class="role-sub">${r.sub}</div>`:''}
+      </div>
+      ${r.active?`<span style="font-size:13px;font-weight:700;color:#112247">Ver planillas →</span>`:`<span style="font-size:11px;color:#bbb;font-style:italic">🔒 Próximamente</span>`}
+    </div>`).join('');
+  return `
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="crumb-btn" data-nav="home">Inicio</button>
+        <span class="crumb-sep">›</span>
+        <span class="crumb-cur">${curArea.label}</span>
+      </div>
+    </div>
+    <div class="page">
+      <div style="font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:20px">Elegí el puesto a evaluar</div>
+      ${roles}
+    </div>`;
+}
+
+// ── LIST ──────────────────────────────────────────────────────────────────
+function buildList(){
+  const rd = getRD(curRole.id);
+  let content;
+  if(loading){
+    content = `<div style="text-align:center;padding:70px;color:#888">Cargando planillas...</div>`;
+  } else if(forms.length===0){
+    content = `<div class="card empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No hay planillas todavía</div>
+      <div class="empty-sub">Creá la primera para ${curRole.label}</div>
+      <button class="btn btn-primary" data-action="nueva">+ Crear primera planilla</button>
+    </div>`;
+  } else {
+    const rows = forms.map(f=>{
+      const del = confirmDelId===f.id
+        ? `<div class="confirm-del"><span>¿Eliminar?</span><button class="btn btn-danger" data-action="del-confirm" data-id="${f.id}">Sí</button><button class="btn btn-ghost" data-action="del-cancel" style="padding:9px 12px">No</button></div>`
+        : `<button class="btn btn-danger" data-action="del-ask" data-id="${f.id}">✕</button>`;
+      return `<div class="planilla-row">
+        <div style="flex:1">
+          <div class="planilla-nombre">${esc(f.apellido_nombre||'(Sin nombre)')}</div>
+          <div class="planilla-meta">
+            ${f.sucursal?`<span>📍 ${esc(f.sucursal)}</span>`:''}
+            ${f.lider_evaluador?`<span>👤 ${esc(f.lider_evaluador)}</span>`:''}
+            <span>📅 ${f.fecha||'—'}</span>
+          </div>
+        </div>
+        <div class="planilla-actions">
+          <span class="badge ${f.status==='Completada'?'badge-completada':'badge-borrador'}">${f.status}</span>
+          <button class="btn btn-outline" data-action="edit" data-id="${f.id}">Editar</button>
+          <button class="btn btn-ghost" data-action="ver" data-id="${f.id}">Ver</button>
+          ${del}
+        </div>
+      </div>`;
+    }).join('');
+    content = `<div style="font-size:13px;color:#888;margin-bottom:14px">${forms.length} planilla${forms.length!==1?'s':''} registrada${forms.length!==1?'s':''}</div>${rows}`;
+  }
+  return `
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="crumb-btn" data-nav="home">Inicio</button>
+        <span class="crumb-sep">›</span>
+        <button class="crumb-btn" data-nav="area">${curArea?.label}</button>
+        <span class="crumb-sep">›</span>
+        <span class="crumb-cur">${curRole.label}${curRole.sub?' · '+curRole.sub:''}</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" data-action="nueva">+ Nueva Planilla</button>
+      </div>
+    </div>
+    <div class="page-wide">${content}</div>`;
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────────
+function buildForm(){
+  const rd = getRD(form.role_id);
+  const steps = STEPS.map((sl,i)=>{
+    const cls = step===i?'step-active':i<step?'step-done':'step-pending';
+    return `<button class="step-btn ${cls}" data-step="${i}">${i<step?'✓ ':''}${i+1}. ${sl}</button>`;
+  }).join('');
+
+  let body = '';
+  if(step===0) body = buildStep0(rd);
+  if(step===1) body = buildStep1(rd);
+  if(step===2) body = buildStep2(rd);
+  if(step===3) body = buildStep3();
+  if(step===4) body = buildStep4();
+
+  const navLeft = `<button class="btn btn-ghost" data-action="prev">← ${step>0?'Anterior':'Cancelar'}</button>`;
+  const navRight = step<4
+    ? `<button class="btn btn-primary" data-action="next">Siguiente →</button>`
+    : `<div style="display:flex;gap:10px">
+        <button class="btn btn-outline" data-action="finish-preview">Ver planilla completa</button>
+        <button class="btn btn-primary" data-action="finish">Finalizar ✓</button>
+       </div>`;
+
+  return `
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="crumb-btn" data-nav="area">${curArea?.label}</button>
+        <span class="crumb-sep">›</span>
+        <button class="crumb-btn" data-nav="list">${curRole?.label}</button>
+        <span class="crumb-sep">›</span>
+        <span class="crumb-cur">${esc(form.apellido_nombre||'Nueva planilla')}</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-white-outline" data-action="save-draft" ${saving?'disabled':''}>
+          ${saving?'Guardando...':'💾 Guardar borrador'}
+        </button>
+      </div>
+    </div>
+    <div class="steps-bar">${steps}</div>
+    <div style="max-width:820px;margin:24px auto;padding:0 16px">
+      ${body}
+      <div style="display:flex;justify-content:space-between;padding-bottom:40px;margin-top:8px">
+        ${navLeft}${navRight}
+      </div>
+    </div>`;
+}
+
+function buildStep0(rd){
+  return `<div class="card">
+    <div class="sec-title">1. Datos del encuentro</div>
+    <div class="grid-2">
+      <div class="fld"><label>Apellido y nombre<span class="req">*</span></label>
+        <input class="inp" data-field="apellido_nombre" value="${esc(form.apellido_nombre)}" placeholder="Ej: García, Martín"></div>
+      <div class="fld"><label>Fecha<span class="req">*</span></label>
+        <input type="date" class="inp" data-field="fecha" value="${form.fecha}"></div>
+      <div class="fld"><label>Sucursal<span class="req">*</span></label>
+        <input class="inp" data-field="sucursal" value="${esc(form.sucursal)}" placeholder="Nombre de la sucursal"></div>
+      <div class="fld"><label>Líder evaluador<span class="req">*</span></label>
+        <input class="inp" data-field="lider_evaluador" value="${esc(form.lider_evaluador)}" placeholder="Nombre del líder"></div>
+    </div>
+    <div class="info-box"><strong>Puesto:</strong> ${rd.puesto} &nbsp;·&nbsp; <strong>Puesto del líder:</strong> ${rd.liderLabel}</div>
+  </div>`;
+}
+
+function buildStep1(rd){
+  const cards = rd.inds.map((ind,i)=>`
+    <div class="ind-card">
+      <div class="ind-header">
+        <span class="ind-num">#${ind.n}</span>
+        <span class="ind-nombre">${ind.nombre}</span>
+        <span class="ind-peso">Peso: ${ind.peso}</span>
+      </div>
+      <div class="ind-formula">${ind.formula}</div>
+      <div class="ind-nota">${ind.nota}</div>
+      <div class="grid-2">
+        <div class="fld"><label>Mínimo necesario<span class="req">*</span></label>
+          <input class="inp" data-arr="indicadores" data-idx="${i}" data-key="minimo" value="${esc(form.indicadores[i]?.minimo||'')}" placeholder="Ej: 50%"></div>
+        <div class="fld"><label>Objetivo deseable<span class="req">*</span></label>
+          <input class="inp" data-arr="indicadores" data-idx="${i}" data-key="objetivo" value="${esc(form.indicadores[i]?.objetivo||'')}" placeholder="Ej: 80%"></div>
+      </div>
+    </div>`).join('');
+  return `<div class="card">
+    <div class="sec-title">2. Indicadores de desempeño</div>
+    <p style="font-size:12px;color:#666;margin:0 0 16px">Los pesos fueron definidos por el área. Completá el mínimo necesario y el objetivo deseable según la sucursal.</p>
+    ${cards}
+  </div>`;
+}
+
+function buildStep2(rd){
+  const cards = rd.comps.map((comp,i)=>{
+    const cal = form.competencias[i]?.cal||'';
+    const calBtns = ['A','B','C','D'].map(o=>
+      `<button class="cal-btn${cal===o?' selected':''}" data-cal="${o}" data-comp="${i}">${o}</button>`
+    ).join('');
+    return `<div class="comp-card${!cal?' sin-cal':''}">
+      <div class="comp-nombre">${comp.nombre}</div>
+      <div class="comp-nivel">${comp.nivel}</div>
+      <ul class="comp-items">${comp.items.map(it=>`<li>${it}</li>`).join('')}</ul>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:flex-start">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#112247;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Calificación <span class="req">*</span></div>
+          <div class="cal-btns">${calBtns}</div>
+          ${!cal?'<div class="cal-req">Requerido</div>':''}
+        </div>
+        <div class="fld"><label>Observaciones</label>
+          <textarea class="inp" data-arr="competencias" data-idx="${i}" data-key="obs" rows="3" placeholder="Comportamientos observados, ejemplos concretos...">${esc(form.competencias[i]?.obs||'')}</textarea>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="card">
+    <div class="sec-title">3. Evaluación de competencias</div>
+    <div class="info-box"><strong>Escala:</strong>&nbsp; A — Supera el nivel esperado &nbsp;·&nbsp; B — Cumple &nbsp;·&nbsp; C — En desarrollo &nbsp;·&nbsp; D — Brecha crítica</div>
+    ${cards}
+  </div>`;
+}
+
+function buildStep3(){
+  const fRows = form.fortalezas.map((f,i)=>`
+    <div class="synth-row">
+      <div class="synth-label">Fortaleza ${i+1}${i===0?'<span class="req"> *</span>':''}</div>
+      <div class="grid-2">
+        <div class="fld"><label>Fortaleza</label><input class="inp" data-arr="fortalezas" data-idx="${i}" data-key="f" value="${esc(f.f)}" placeholder="Describí la fortaleza"></div>
+        <div class="fld"><label>Ejemplo concreto</label><input class="inp" data-arr="fortalezas" data-idx="${i}" data-key="e" value="${esc(f.e)}" placeholder="Situación o evidencia observable"></div>
+      </div>
+    </div>`).join('');
+  const aRows = form.areas.map((a,i)=>`
+    <div class="synth-row">
+      <div class="synth-label">Área de mejora ${i+1}${i===0?'<span class="req"> *</span>':''}</div>
+      <div class="grid-3">
+        <div class="fld"><label>Brecha / Área</label><input class="inp" data-arr="areas" data-idx="${i}" data-key="b" value="${esc(a.b)}" placeholder="Qué área"></div>
+        <div class="fld"><label>Situación observada</label><input class="inp" data-arr="areas" data-idx="${i}" data-key="s" value="${esc(a.s)}" placeholder="Qué se observó"></div>
+        <div class="fld"><label>Impacto</label><input class="inp" data-arr="areas" data-idx="${i}" data-key="i" value="${esc(a.i)}" placeholder="Consecuencia o efecto"></div>
+      </div>
+    </div>`).join('');
+  return `
+    <div class="card">
+      <div class="sec-title">4a. Fortalezas observadas en el período</div>
+      <p style="font-size:12px;color:#666;margin:0 0 14px">Al menos 1 completa, hasta 3. Incluí un ejemplo concreto u observable.</p>
+      ${fRows}
+    </div>
+    <div class="card">
+      <div class="sec-title">4b. Áreas de mejora</div>
+      <p style="font-size:12px;color:#666;margin:0 0 14px">Al menos 1 completa, hasta 3.</p>
+      ${aRows}
+    </div>`;
+}
+
+function buildStep4(){
+  const rows = form.compromisos.map((c,i)=>`
+    <div class="synth-row">
+      <div class="synth-label">Compromiso ${i+1}${i===0?'<span class="req"> *</span>':''}</div>
+      <div class="fld"><label>Compromiso / Acción de mejora</label>
+        <input class="inp" data-arr="compromisos" data-idx="${i}" data-key="c" value="${esc(c.c)}" placeholder="Describí el compromiso concreto"></div>
+      <div class="grid-2">
+        <div class="fld"><label>Quién es responsable</label>
+          <input class="inp" data-arr="compromisos" data-idx="${i}" data-key="q" value="${esc(c.q)}" placeholder="Colaborador / Líder / Ambos"></div>
+        <div class="fld"><label>Plazo</label>
+          <input class="inp" data-arr="compromisos" data-idx="${i}" data-key="p" value="${esc(c.p)}" placeholder="Ej: Ago 2026"></div>
+      </div>
+      <div class="fld"><label>¿Cómo se va a medir o evidenciar?</label>
+        <input class="inp" data-arr="compromisos" data-idx="${i}" data-key="m" value="${esc(c.m)}" placeholder="Ej: Registro en sistema, informe mensual..."></div>
+    </div>`).join('');
+  return `<div class="card">
+    <div class="sec-title">5. Compromisos para el segundo semestre</div>
+    <p style="font-size:12px;color:#666;margin:0 0 16px">Al menos 1 compromiso completo, hasta 3.</p>
+    ${rows}
+    <div class="warn-box" style="margin-top:8px">Al firmar, el/la colaborador/a confirma haber recibido y comprendido los indicadores y competencias que guiarán la evaluación de fin de año.</div>
+  </div>`;
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────────────
+function buildPreview(){
+  const rd = getRD(form.role_id);
+  const dataGrid = [
+    ['Apellido y nombre', form.apellido_nombre],
+    ['Fecha', form.fecha],
+    ['Puesto', rd.puesto],
+    ['Sucursal', form.sucursal],
+    ['Líder evaluador', form.lider_evaluador],
+    ['Puesto del líder', rd.liderLabel],
+  ].map(([k,v])=>`<div><div class="preview-data-key">${k}</div><div class="preview-data-val">${esc(v)||'—'}</div></div>`).join('');
+
+  const indRows = rd.inds.map((ind,i)=>`<tr>
+    <td class="center"><strong style="color:#112247">${ind.n}</strong></td>
+    <td><div style="font-weight:600">${ind.nombre}</div><div style="font-size:11px;color:#888;margin-top:2px">${ind.formula}</div><div style="font-size:11px;color:#bbb">${ind.nota}</div></td>
+    <td class="center"><strong style="color:#112247">${ind.peso}</strong></td>
+    <td class="center">${esc(form.indicadores[i]?.minimo)||'—'}</td>
+    <td class="center">${esc(form.indicadores[i]?.objetivo)||'—'}</td>
+  </tr>`).join('');
+
+  const compBlocks = rd.comps.map((comp,i)=>{
+    const cal = form.competencias[i]?.cal||'';
+    const obs = form.competencias[i]?.obs||'';
+    return `<div style="border:1px solid #dde2ec;border-radius:8px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div><span style="font-weight:700;font-size:14px;color:#112247">${comp.nombre}</span><span style="font-size:11px;color:#888;margin-left:10px">${comp.nivel}</span></div>
+        ${cal?`<span class="cal-badge cal-${cal}">${cal}</span>`:'<span style="font-size:12px;color:#ccc">sin calificar</span>'}
+      </div>
+      ${obs?`<div class="obs-box"><strong style="color:#888">Observaciones: </strong>${esc(obs)}</div>`:''}
+    </div>`;
+  }).join('');
+
+  const fortRows = form.fortalezas.map(f=>`<tr><td>${esc(f.f)||'—'}</td><td>${esc(f.e)||'—'}</td></tr>`).join('');
+  const areaRows = form.areas.map(a=>`<tr><td>${esc(a.b)||'—'}</td><td>${esc(a.s)||'—'}</td><td>${esc(a.i)||'—'}</td></tr>`).join('');
+  const comprRows = form.compromisos.map((c,i)=>`<tr><td class="center"><strong style="color:#112247">${i+1}</strong></td><td>${esc(c.c)||'—'}</td><td>${esc(c.q)||'—'}</td><td>${esc(c.p)||'—'}</td><td>${esc(c.m)||'—'}</td></tr>`).join('');
+
+  return `
+    <div style="background:#112247;padding:0 24px;display:flex;align-items:center;justify-content:space-between;min-height:56px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <button data-nav="list" style="background:rgba(255,255,255,.12);border:none;color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">← Volver</button>
+        <span style="color:rgba(255,255,255,.65);font-size:13px">${rd.puesto} · ${esc(form.apellido_nombre)}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <button class="btn btn-primary" data-action="print" style="font-size:12px">📄 Descargar para imprimir</button>
+        <span style="font-size:10px;color:rgba(255,255,255,.45)">Abrí el archivo descargado → Ctrl+P para PDF</span>
+      </div>
+    </div>
+    <div style="max-width:820px;margin:28px auto;padding:0 16px 48px">
+      <div class="preview-header">
+        <div style="font-size:11px;opacity:.5;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Romera Hnos. S.A. · RRHH | Revisión Inicial de Desempeño · Versión 00</div>
+        <div style="font-size:21px;font-weight:900">Planilla de Revisión de Desempeño</div>
+        <div style="font-size:13px;opacity:.75;margin-top:5px">${rd.puesto} · Revisión inicial y comunicación de parámetros · 2026</div>
+      </div>
+      <div class="preview-sub">Esta instancia tiene dos propósitos: (1) comunicar los indicadores de desempeño y las competencias que guiarán la evaluación de fin de año, y (2) ofrecer una primera devolución sobre fortalezas y áreas de mejora. El documento queda como registro firmado del acuerdo.</div>
+      <div class="preview-section">
+        <div class="sec-title">1. Datos del encuentro</div>
+        <div class="preview-data-grid">${dataGrid}</div>
+      </div>
+      <div class="preview-section">
+        <div class="sec-title">2. Indicadores de desempeño</div>
+        <table class="preview-table"><thead><tr><th class="center">#</th><th>Indicador y fórmula</th><th class="center">Peso</th><th class="center">Mínimo necesario</th><th class="center">Objetivo deseable</th></tr></thead><tbody>${indRows}</tbody></table>
+      </div>
+      <div class="preview-section">
+        <div class="sec-title">3. Evaluación de competencias</div>
+        <div class="info-box"><strong>Escala:</strong> A — Supera el nivel esperado · B — Cumple · C — En desarrollo · D — Brecha crítica</div>
+        ${compBlocks}
+      </div>
+      <div class="preview-section">
+        <div class="sec-title">4. Síntesis del encuentro</div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:#333">Fortalezas observadas en el período</div>
+        <table class="preview-table" style="margin-bottom:20px"><thead><tr><th>Fortaleza</th><th>Ejemplo concreto del período</th></tr></thead><tbody>${fortRows}</tbody></table>
+        <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:#333">Áreas de mejora</div>
+        <table class="preview-table"><thead><tr><th>Brecha / Área</th><th>Situación observada</th><th>Impacto</th></tr></thead><tbody>${areaRows}</tbody></table>
+      </div>
+      <div class="preview-section">
+        <div class="sec-title">5. Compromisos para el segundo semestre</div>
+        <table class="preview-table"><thead><tr><th class="center">#</th><th>Compromiso</th><th>Quién</th><th>Plazo</th><th>Cómo se mide</th></tr></thead><tbody>${comprRows}</tbody></table>
+      </div>
+      <div class="preview-section">
+        <div style="font-size:12px;color:#666;margin-bottom:28px;font-style:italic">Al firmar, el/la colaborador/a confirma haber recibido y comprendido los indicadores y competencias que guiarán su evaluación de fin de año.</div>
+        <div class="sig-grid">
+          ${['Colaborador/a','Líder evaluador','Recursos Humanos'].map(s=>`<div><div class="sig-line"></div><div style="font-size:12px;font-weight:700">${s}</div><div style="font-size:11px;color:#888;margin-top:3px">Nombre y firma</div><div style="font-size:11px;color:#aaa;margin-top:2px">Fecha: ___________</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── EVENTOS ──────────────────────────────────────────────────────────────
+function attachEvents(){
+  // Navegación por crumbs
+  document.querySelectorAll('[data-nav]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const t = el.dataset.nav;
+      if(t==='home'){ view='home'; render(); }
+      if(t==='area'){ view='area'; render(); }
+      if(t==='list'){ view='list'; render(); }
+    });
+  });
+
+  // Home: click en área
+  document.querySelectorAll('.area-card:not(.disabled)').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const a = AREAS.find(x=>x.id===el.dataset.area);
+      if(a){ curArea=a; view='area'; render(); }
+    });
+  });
+
+  // Area: click en rol
+  document.querySelectorAll('.role-card:not(.disabled)').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const allRoles = AREAS.flatMap(a=>a.roles);
+      const r = allRoles.find(x=>x.id===el.dataset.role);
+      if(r){ curRole=r; loadForms(r); view='list'; render(); }
+    });
+  });
+
+  // List actions
+  const qa = (a) => document.querySelector(`[data-action="${a}"]`);
+  const qas = (a) => document.querySelectorAll(`[data-action="${a}"]`);
+  
+  if(qa('nueva')) qa('nueva').addEventListener('click',()=>{ form=mkForm(curRole.id); step=0; view='form'; render(); });
+  
+  qas('edit').forEach(el=>el.addEventListener('click',()=>{
+    const f = forms.find(x=>x.id===el.dataset.id);
+    if(f){ form={...f}; step=0; view='form'; render(); }
+  }));
+  qas('ver').forEach(el=>el.addEventListener('click',()=>{
+    const f = forms.find(x=>x.id===el.dataset.id);
+    if(f){ form={...f}; view='preview'; render(); }
+  }));
+  qas('del-ask').forEach(el=>el.addEventListener('click',()=>{ confirmDelId=el.dataset.id; render(); }));
+  qas('del-cancel').forEach(el=>el.addEventListener('click',()=>{ confirmDelId=null; render(); }));
+  qas('del-confirm').forEach(el=>el.addEventListener('click',()=>delForm(el.dataset.id)));
+
+  // Form: campos
+  document.querySelectorAll('[data-field]').forEach(el=>{
+    el.addEventListener('input',()=>{ form[el.dataset.field]=el.value; });
+  });
+  document.querySelectorAll('[data-arr]').forEach(el=>{
+    el.addEventListener('input',()=>{
+      const arr=[...form[el.dataset.arr]];
+      arr[el.dataset.idx]={...arr[el.dataset.idx],[el.dataset.key]:el.value};
+      form[el.dataset.arr]=arr;
+    });
+  });
+
+  // Calificaciones
+  document.querySelectorAll('[data-cal]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const i=parseInt(el.dataset.comp);
+      const arr=[...form.competencias];
+      arr[i]={...arr[i], cal: arr[i].cal===el.dataset.cal?'':el.dataset.cal};
+      form.competencias=arr;
+      render();
+    });
+  });
+
+  // Steps
+  document.querySelectorAll('[data-step]').forEach(el=>{
+    const s=parseInt(el.dataset.step);
+    if(s<=step) el.addEventListener('click',()=>{ step=s; render(); });
+  });
+
+  // Nav form
+  if(qa('prev')) qa('prev').addEventListener('click',()=>{ step>0?step--:view='list'; render(); });
+  if(qa('next')) qa('next').addEventListener('click',()=>{
+    const err=validate(step,form); if(err){ toast('⚠ '+err,true); return; }
+    saveForm(form); step++; render();
+  });
+  if(qa('save-draft')) qa('save-draft').addEventListener('click',()=>saveForm(form));
+  if(qa('finish')) qa('finish').addEventListener('click',async()=>{
+    const err=validate(4,form); if(err){ toast('⚠ '+err,true); return; }
+    await saveForm(form,'Completada'); view='list'; render();
+  });
+  if(qa('finish-preview')) qa('finish-preview').addEventListener('click',async()=>{
+    const err=validate(4,form); if(err){ toast('⚠ '+err,true); return; }
+    const saved=await saveForm(form,'Completada'); form=saved; view='preview'; render();
+  });
+  if(qa('print')) qa('print').addEventListener('click',()=>doPrint(form));
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
