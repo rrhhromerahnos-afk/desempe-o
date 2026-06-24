@@ -225,7 +225,8 @@ function formToDb(f){
   const rd=getRD(f.role_id);
   const db={id:f.id,role_id:f.role_id,created_at:f.created_at,updated_at:f.updated_at,
     apellido_nombre:f.apellido_nombre,fecha:f.fecha,sucursal:f.sucursal,
-    lider_evaluador:f.lider_evaluador,status:f.status};
+    lider_evaluador:f.lider_evaluador,status:f.status,
+    created_by:f.created_by||currentUser.id};
   for(let i=0;i<5;i++){
     const ind=f.indicadores[i],rdi=rd.inds[i];
     db[`indicador_${i+1}`]=(ind&&rdi)?`${rdi.nombre} | Mín: ${ind.minimo||'—'} | Obj: ${ind.objetivo||'—'}`:null;
@@ -292,6 +293,7 @@ function mkForm(rid){
   return {
     id:Date.now().toString(), role_id:rid,
     created_at:new Date().toISOString(),
+    created_by:currentUser.id,
     apellido_nombre:'', fecha:new Date().toISOString().split('T')[0],
     sucursal:'', lider_evaluador:'',
     indicadores:rd.inds.map(ind=>({minimo:ind.dm||'',objetivo:ind.do||''})),
