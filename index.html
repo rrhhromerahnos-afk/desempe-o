@@ -358,12 +358,9 @@ function validate(s,f){
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────
 function getAreasPermitidas(){
-  if(!currentPerfil||currentPerfil.is_admin) return AREAS;
-  const permitidos=currentPerfil.roles_permitidos||[];
-  return AREAS.map(a=>({
-    ...a,
-    roles:a.roles.map(r=>({...r, active:r.active&&permitidos.includes(r.id)}))
-  })).filter(a=>a.roles.some(r=>r.active));
+  // La visibilidad de datos está controlada por RLS (created_by).
+  // roles_permitidos se ignora en la UI: todos los usuarios ven los roles activos.
+  return AREAS;
 }
 
 async function checkAuth(){
