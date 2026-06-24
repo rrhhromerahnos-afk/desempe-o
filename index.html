@@ -142,7 +142,7 @@ const AREAS = [
     { id:'supervisor-autoahorro', label:'Supervisor', sub:'Autoahorro', active:false },
   ]},
   { id:'venta', label:'Venta', icon:'◈', roles:[
-    { id:'asesor-ventas', label:'Asesor de Ventas', sub:'VW', active:true },
+    { id:'asesor-ventas', label:'Asesor Comercial', sub:'Convencional', active:true },
     { id:'jefe-ventas', label:'Jefe de Ventas', sub:'', active:false },
     { id:'asesor-usados', label:'Asesor de Usados', sub:'', active:false },
   ]},
@@ -206,15 +206,15 @@ const ROLE_DATA = {
   'asesor-postventa': {
     puesto:'Asesor de Servicios', liderLabel:'Gerente de Servicio / Jefe de Taller',
     inds:[
-      {n:1,peso:'50%',nombre:'Calidad de Trato al Cliente (LBS)',formula:'Puntaje promedio de la encuesta de última visita en la dimensión de trato y atención del asesor',nota:'Objetivo: maximizar — referencia escala VW',dm:'4,81',do:'4,90'},
+      {n:1,peso:'50%',nombre:'Calidad de Trato al Cliente (LVS)',formula:'Puntaje promedio de la encuesta de última visita en la dimensión de trato y atención del asesor',nota:'Objetivo: maximizar — referencia escala VW',dm:'4,81',do:'4,90'},
       {n:2,peso:'35%',nombre:'Auditoría OR — Apertura de Orden de Reparación',formula:'% de órdenes auditadas con apertura correcta y completa',nota:'Objetivo: 100% — sin excepciones',dm:'100%',do:'100%'},
-      {n:3,peso:'15%',nombre:'Venta de Accesorios — Cumplimiento de Campaña Mensual',formula:'Unidades/monto vendido de accesorio de campaña mensual vs. objetivo asignado',nota:'Objetivo: maximizar — los productos y montos se definen mes a mes',dm:'',do:''},
+      {n:3,peso:'15%',nombre:'Venta de Accesorios — Cumplimiento de Campaña Mensual',formula:'% de objetivos cumplidos sobre objetivos totales',nota:'Objetivo: maximizar — los productos y montos se definen mes a mes',dm:'',do:''},
     ],
     comps:[
-      {nombre:'Capacidad / Conocimiento Técnico del Proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Tiene conocimiento del proceso técnico suficiente para comunicar al cliente qué se realizará y cuándo estará listo.','Completa los módulos de formación obligatorios de VW Academy dentro de los plazos.','Registra correctamente en el sistema los datos técnicos de la OT al momento de la apertura.']},
-      {nombre:'Uso de Tecnología',nivel:'Nivel requerido: 2 — Intermedio',items:['Opera el sistema DMS (Tenia) para apertura, seguimiento y cierre de OTs de forma autónoma.','Usa las herramientas digitales del área sin resistencia ante actualizaciones o cambios.','Registra los datos de cada recepción en tiempo real durante la atención.']},
-      {nombre:'Planificación & Organización',nivel:'Nivel requerido: 2 — Intermedio',items:['Gestiona su agenda de turnos de modo que la capacidad del taller esté aprovechada sin generar cuellos de botella.','Anticipa al cliente cuando hay un desvío en el plazo de entrega, sin esperar a que el cliente llame.','Al cierre del turno, todas las OTs activas tienen el estado actualizado en el sistema.']},
-      {nombre:'Orientación al cliente & proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Recibe al cliente de forma cálida y registra sus datos de recepción completos antes de abrir la OT.','Gestiona las expectativas sobre plazos y presupuesto de forma proactiva y honesta.','Asegura que el cliente salga con claridad sobre lo que se realizó y los próximos pasos.']},
+      {nombre:'Conocimiento Técnico del Proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Tiene conocimiento del proceso técnico suficiente para comunicar al cliente el trabajo qué se realizará y cuándo estará listo.','Completa los módulos de formación obligatorios de VW Academy dentro de los plazos.','Registra correctamente en el sistema todos los datos de la OT al momento de la apertura.']},
+      {nombre:'Uso de Tecnología',nivel:'Nivel requerido: 2 — Intermedio',items:['Opera el sistema ELSA PRO para consultar campañas e ITPs.','Usa las herramientas digitales del área sin resistencia ante actualizaciones o cambios.','Registra los datos de cada recepción en tiempo real durante la atención.']},
+      {nombre:'Planificación & Organización',nivel:'Nivel requerido: 2 — Intermedio',items:['Anticipa al cliente cuando hay un desvío en el plazo de entrega, sin esperar a que el cliente llame.','Planifica su jornada con antelación para asegurar un eficiente desarrollo del servicio.']},
+      {nombre:'Orientación al cliente & proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Recibe al cliente de forma cálida y registra sus datos de recepción completos antes de abrir la OT.','Gestiona las expectativas sobre plazos y presupuesto de forma proactiva y honesta.','Asegura que el cliente salga con conceptos claros sobre el trabajo que se realizó y los próximos pasos.']},
     ],
   },
 };
