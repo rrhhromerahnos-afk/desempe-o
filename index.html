@@ -225,9 +225,10 @@ const ROLE_DATA = {
   'asesor-postventa': {
     puesto:'Asesor de Servicios', liderLabel:'Gerente de Servicio / Jefe de Taller',
     inds:[
-      {n:1,peso:'50%',nombre:'Calidad de Trato al Cliente (LVS)',formula:'Puntaje promedio de la encuesta de última visita en la dimensión de trato y atención del asesor',nota:'Objetivo: maximizar — referencia escala VW',dm:'4,81',do:'4,90'},
-      {n:2,peso:'35%',nombre:'Auditoría OR — Apertura de Orden de Reparación',formula:'% de órdenes auditadas con apertura correcta y completa',nota:'Objetivo: 100% — sin excepciones',dm:'100%',do:'100%'},
-      {n:3,peso:'15%',nombre:'Venta de Accesorios — Cumplimiento de Campaña Mensual',formula:'% de objetivos cumplidos sobre objetivos totales',nota:'Objetivo: maximizar — los productos y montos se definen mes a mes',dm:'',do:''},
+      {n:1,peso:'50%',nombre:'Calidad de Trato al Cliente (encuesta de satisfacción)',formula:'Puntaje promedio de la encuesta de satisfacción en la dimensión de trato y atención del asesor',nota:'Objetivo: maximizar — referencia escala VW',dm:'4,82',do:'4,90'},
+      {n:2,peso:'30%',nombre:'Auditoría OR — Apertura de Orden de Reparación',formula:'Cumplimiento al 100% de los ítems del checklist correspondientes al asesor de servicio',nota:'Objetivo: 100% — sin excepciones',dm:'100%',do:'100%'},
+      {n:3,peso:'10%',nombre:'Venta de Accesorios',formula:'Cantidad promedio mensual de ventas (excluye boutique; incluye tuercas, infladores, lonas, etc.)',nota:'Objetivo: maximizar',dm:'2 accesorios',do:''},
+      {n:4,peso:'10%',nombre:'Venta de contratos de mantenimiento',formula:'Cantidad promedio mensual de ventas',nota:'Objetivo: maximizar',dm:'3 contratos',do:''},
     ],
     comps:[
       {nombre:'Conocimiento Técnico del Proceso',nivel:'Nivel requerido: 2 — Intermedio',items:['Tiene conocimiento del proceso técnico suficiente para comunicar al cliente el trabajo qué se realizará y cuándo estará listo.','Completa los módulos de formación obligatorios de VW Academy dentro de los plazos.','Registra correctamente en el sistema todos los datos de la OT al momento de la apertura.']},
